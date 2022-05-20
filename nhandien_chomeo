@@ -1,0 +1,93 @@
+import matplotlib.pyplot as plt
+from matplotlib.image import imread
+from google.colab import drive
+drive.mount('/content/drive')
+
+folder = '/content/drive/MyDrive/data/data/train/dogs/'
+for i in range(9):
+    plt.subplot(330+i+1)
+    filename = folder + 'dog.' +str(i) + '.jpg'
+    image = imread(filename)
+    plt.imshow(image)
+plt.show
+
+folder = '/content/drive/MyDrive/data/data/train/cats/'
+for i in range(9):
+    plt.subplot(330+i+1)
+    filename = folder + 'cat.' +str(i) + '.jpg'
+    image = imread(filename)
+    plt.imshow(image)
+plt.show
+
+from os import listdir
+from numpy import asarray
+from numpy import save
+from keras.preprocessing.image import load_img, img_to_array
+#folder = '/content/drive/MyDrive/data/data/train/cats/'
+folder = '/content/drive/MyDrive/data/data/train/cats/'
+photos, labels = list(),list()
+for file in listdir(folder):
+  output = 0
+  if file.startswith('cat'):
+    output = 1.0
+  photo = load_img(folder+file,target_size=(200,200))
+  photo=img_to_array(photo)
+  photos.append(photo)
+  labels.append(output)
+photos = asarray(photos)
+labels = asarray(labels)
+print(photos.shape,labels.shape)
+save('dog_vs_cat_photos.npy',photos)
+save('dog_vs_cat_labels.npy',labels)
+
+from keras.models       import Sequential
+from keras.layers       import Conv2D
+from keras.layers       import MaxPooling2D
+from keras.layers       import Flatten
+from keras.layers       import Dense, Activation, BatchNormalization, Dropout, LSTM
+from tensorflow.keras.optimizers   import SGD
+
+model = Sequential()
+model.add(Conv2D(32,(3,3),activation='relu',
+                 kernel_initializer='he_uniform',
+                 padding='same', input_shape=(200,200,3)))
+model.add(MaxPooling2D((2,2)))
+model.add(Flatten())
+
+model.add(Dense(128,activation='relu',
+                 kernel_initializer='he_uniform'))
+model.add(Dense(1,activation='softmax'))
+
+opt = SGD(lr=0.01, momentum=0.9)
+model.compile(optimizer=opt,
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+history=model.fit(photos, labels,
+                  epochs=20,
+                  verbose=1)
+
+model.save('Final.h5')
+from keras.models import load_model
+model5 = load_model('Final.h5')
+
+import numpy as np
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import array_to_img
+
+img = load_img('dog1.jpg',target_size=(200,200))
+plt.imshow(img)
+img = img_to_array(img)
+img = img.reshape(1,200,200,3)
+img = img.astype('float32')
+img/=255
+np.argmax(model.predict(img),axis=-1)
+
+img = load_img('catt.jpg',target_size=(200,200))
+plt.imshow(img)
+img = img_to_array(img)
+img = img.reshape(1,200,200,3)
+img = img.astype('float32')
+img/=255
+np.argmax(model.predict(img),axis=-1)
