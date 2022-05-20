@@ -1,0 +1,98 @@
+from google.colab import drive
+drive.mount('/content/drive')
+from keras import datasets, Sequential
+from keras.layers import Conv2D, Dense, MaxPooling2D, Flatten
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import numpy as np
+from keras.utils import np_utils
+from keras.datasets import cifar10
+import matplotlib.pyplot as plt
+from tensorflow.keras.optimizers import Adam
+from keras.preprocessing import  image
+from keras.preprocessing.image import load_img, img_to_array,array_to_img,ImageDataGenerator
+import numpy as np
+import os
+import cv2 as cv
+traicay = ['apple','banana','bap','hanh','khoaitay','kiwi','le','lermon','man','mango'] 
+
+dir_train = '/content/drive/MyDrive/data/traicay' 
+dir_test = '/content/drive/MyDrive/data/traicay' 
+
+
+listpath = []
+y_train = []
+x_train = []
+x_test = []
+y_test = []
+def create_data(dir, x_train, y_train):
+  for i in traicay:
+    path = os.path.join(dir,i)
+    index_label = traicay.index(i)
+    for j in os.listdir(path):
+      img_path = os.path.join(path, j)
+      img = image.load_img(img_path, target_size=(60,60)) 
+      img = img_to_array(img)
+      img = img.reshape(60,60,3) 
+      img = img.astype('float32')
+      img = img/255
+      x_train.append(img)
+      y_train.append(index_label)
+create_data(dir_train, x_train, y_train) #tạo dữ liệu 
+# xử lí dữ liệu
+x_train = np.array(x_train)
+y_train = np.array(y_train)
+y_train = np_utils.to_categorical(y_train, 10)
+print(x_train.shape) # nhớ chú ý kích thước hình ảnh để tí cho vào input của model
+print(y_train.shape)
+
+# Initialising the CNN
+model = Sequential()
+
+# Step 1 - Convolution
+model.add(Conv2D(32, 3, 3, input_shape = (60,60, 3), activation = 'relu'))
+
+# Step 2 - Pooling
+model.add(MaxPooling2D(pool_size = (2, 2)))
+
+# Adding a second convolutional layer
+model.add(Conv2D(32, 3, 3, activation = 'relu'))
+model.add(MaxPooling2D(pool_size = (2, 2)))
+
+# Step 3 - Flattening
+model.add(Flatten())
+
+# Step 4 - Full connection
+model.add(Dense(512, activation = 'relu'))
+model.add(Dense(256, activation = 'relu'))
+model.add(Dense(128, activation = 'relu'))
+model.add(Dense( 10, activation = 'softmax'))
+
+# Compiling the CNN
+model.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+
+
+history = model.fit(x_train,y_train,epochs = 10,verbose = 1)
+model.save('traicay.h5')
+from keras import models
+model_newMonAn = models.load_model('traicay.h5')
+
+
+
+pic = image.load_img('bap.jpg', target_size=(60,60))
+plt.imshow(pic)
+pic = img_to_array(pic)
+pic = pic.reshape(1,60,60,3) 
+pic = pic.astype('float32')
+pic = pic/255
+np.argmax(model.predict(pic), axis=1)
+
+
+pic = image.load_img('kiwi.jpg', target_size=(60,60))
+plt.imshow(pic)
+pic = img_to_array(pic)
+pic = pic.reshape(1,60,60,3) 
+pic = pic.astype('float32')
+pic = pic/255
+np.argmax(model.predict(pic), axis=1)
+
