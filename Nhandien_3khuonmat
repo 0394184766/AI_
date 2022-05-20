@@ -1,0 +1,116 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from keras import datasets,Sequential,callbacks
+from keras.layers import Conv2D, Dense, MaxPooling2D, Flatten
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from keras.layers import Dense,Activation,BatchNormalization,Dropout
+from keras.models import Sequential
+from tensorflow.keras.utils import to_categorical
+from keras import callbacks
+from sklearn.metrics import precision_score, recall_score,confusion_matrix,classification_report,accuracy_score,f1_score
+from keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers import RMSprop
+from matplotlib import scale
+
+
+from sklearn.metrics import confusion_matrix
+from keras.utils import np_utils
+from keras.preprocessing.image import load_img, img_to_array,array_to_img,ImageDataGenerator, image
+import os
+
+people = ['chien','hoang','nghia'] 
+
+dir_train = '/content/drive/MyDrive/data/Face/' 
+
+listpath = []
+y_train = []
+x_train = []
+x_test = []
+y_test = []
+
+# Tạo dữ liệu
+def create_data(dir, x_train, y_train):
+  for i in people:
+    path = os.path.join(dir,i)
+    index_label = people.index(i)
+    for j in os.listdir(path):
+      img_path = os.path.join(path, j)
+      img = image.load_img(img_path, target_size=(360,640)) # độ phân giải 
+      img = img_to_array(img)
+      img = img.reshape(360,640,3) 
+      img = img.astype('float32')
+      img = img/255
+      x_train.append(img)
+      y_train.append(index_label)
+
+create_data(dir_train, x_train, y_train) #tạo dữ liệu 
+
+# xử lí dữ liệu
+x_train = np.array(x_train)
+y_train = np.array(y_train)
+y_train = np_utils.to_categorical(y_train, 10)
+print(x_train.shape) # nhớ chú ý kích thước hình ảnh để tí cho vào input của model
+print(y_train.shape)
+
+model = Sequential()
+
+model.add(Conv2D(filters=32,
+                 kernel_size=(27,48),
+                 activation='relu',
+                 kernel_initializer='he_uniform',
+                 padding='same',
+                 input_shape=(360,640,3),
+                 strides=(2,2)))
+
+model.add(MaxPooling2D(2,2))
+
+model.add(Conv2D(filters=64,
+                 kernel_size=(27,48), 
+                 activation='relu',
+                 kernel_initializer='he_uniform',
+                 padding='same'))
+
+model.add(MaxPooling2D(2,2))
+
+model.add(Flatten())
+
+model.add(Dense(512, activation='relu',input_shape=(691200,), name='layer1')) #691200=360x640
+model.add(Dense(1028, activation='relu', name='layer2'))
+model.add(Dense(1028, activation='relu', name='layer3'))
+model.add(Dense(10, activation='softmax', name='layer4'))
+
+model.summary()
+
+model.compile(loss='categorical_crossentropy', optimizer=RMSprop(), metrics=['accuracy'])
+
+history = model.fit(x_train,y_train,epochs = 10)
+
+pic = image.load_img('/content/drive/MyDrive/data/Face/chien/00009.jpg', target_size=(360,640))
+plt.imshow(pic)
+pic = img_to_array(pic)
+pic = pic.reshape(1,360,640,3) 
+pic = pic.astype('float32')
+pic = pic/255
+np.argmax(model.predict(pic), axis=1)
+
+pic = image.load_img('/content/drive/MyDrive/data/Face/nghia/00009.jpg', target_size=(360,640))
+plt.imshow(pic)
+pic = img_to_array(pic)
+pic = pic.reshape(1,360,640,3) 
+pic = pic.astype('float32')
+pic = pic/255
+np.argmax(model.predict(pic), axis=1)
+
+pic = image.load_img('/content/drive/MyDrive/data/Face/hoang/00009.jpg', target_size=(360,640))
+plt.imshow(pic)
+pic = img_to_array(pic)
+pic = pic.reshape(1,360,640,3) 
+pic = pic.astype('float32')
+pic = pic/255
+np.argmax(model.predict(pic), axis=1)
